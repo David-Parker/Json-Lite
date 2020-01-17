@@ -110,7 +110,7 @@ JsonElement* JsonLiteSerializer::GetLast()
 	return this->last;
 }
 
-JsonElement* JsonLiteSerializer::AddArray(JsonElement* parent, std::string name)
+JsonElement* JsonLiteSerializer::AddArray(JsonElement* parent, const std::string& name)
 {
 	if (parent == nullptr)
 	{
@@ -126,7 +126,7 @@ JsonElement* JsonLiteSerializer::AddArray(JsonElement* parent, std::string name)
 	return newElem;
 }
 
-JsonElement* JsonLiteSerializer::AddObject(JsonElement* parent, std::string name)
+JsonElement* JsonLiteSerializer::AddObject(JsonElement* parent, const std::string& name)
 {
 	if (parent == nullptr)
 	{
@@ -142,7 +142,7 @@ JsonElement* JsonLiteSerializer::AddObject(JsonElement* parent, std::string name
 	return newElem;
 }
 
-JsonElement* JsonLiteSerializer::AddString(JsonElement* parent, std::string name, std::string value)
+JsonElement* JsonLiteSerializer::AddString(JsonElement* parent, const std::string& name, const std::string& value)
 {
 	if (parent == nullptr)
 	{
@@ -158,7 +158,7 @@ JsonElement* JsonLiteSerializer::AddString(JsonElement* parent, std::string name
 	return newElem;
 }
 
-JsonElement* JsonLiteSerializer::AddInteger(JsonElement* parent, std::string name, int value)
+JsonElement* JsonLiteSerializer::AddInteger(JsonElement* parent, const std::string& name, int value)
 {
 	if (parent == nullptr)
 	{
@@ -174,7 +174,7 @@ JsonElement* JsonLiteSerializer::AddInteger(JsonElement* parent, std::string nam
 	return newElem;
 }
 
-JsonElement* JsonLiteSerializer::AddFloat(JsonElement* parent, std::string name, float value)
+JsonElement* JsonLiteSerializer::AddFloat(JsonElement* parent, const std::string& name, float value)
 {
 	if (parent == nullptr)
 	{
@@ -190,7 +190,7 @@ JsonElement* JsonLiteSerializer::AddFloat(JsonElement* parent, std::string name,
 	return newElem;
 }
 
-JsonElement* JsonLiteSerializer::AddBoolean(JsonElement* parent, std::string name, bool value)
+JsonElement* JsonLiteSerializer::AddBoolean(JsonElement* parent, const std::string& name, bool value)
 {
 	if (parent == nullptr)
 	{
@@ -214,7 +214,12 @@ int main()
 	JsonElement* parent = serializer.GetRoot();
 	parent = serializer.AddArray(parent, "Results");
 
-	int numbers[] = { 1,2,3,4,5,6,7,8,9 };
+	std::vector<int> numbers;
+
+	for (int i = 0 ; i < 1000000; ++i)
+	{
+		numbers.push_back(100);
+	}
 
 	for (int val : numbers)
 	{
@@ -227,7 +232,7 @@ int main()
 	serializer.AddFloat(parent, "Mean", 12.23);
 	serializer.AddFloat(parent, "StDv", 0.6);
 
-	std::cout << serializer.ToString() << std::endl;
+	std::cout << serializer.ToString();
 
     return 0;
 }

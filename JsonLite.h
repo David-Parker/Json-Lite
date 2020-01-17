@@ -31,7 +31,7 @@ namespace JsonLite
 	class JsonArray : public JsonElement
 	{
 	public:
-		JsonArray(std::string name) : JsonElement(name, JsonElement::Type::JsonArray)
+		JsonArray(const std::string& name) : JsonElement(name, JsonElement::Type::JsonArray)
 		{
 		}
 	};
@@ -39,7 +39,7 @@ namespace JsonLite
 	class JsonObject : public JsonElement
 	{
 	public:
-		JsonObject(std::string name) : JsonElement(name, JsonElement::Type::JsonObject)
+		JsonObject(const std::string& name) : JsonElement(name, JsonElement::Type::JsonObject)
 		{
 		}
 	};
@@ -49,7 +49,7 @@ namespace JsonLite
 	public:
 		std::string value;
 
-		JsonString(std::string name, std::string value) : JsonElement(name, JsonElement::Type::JsonString), value(value)
+		JsonString(const std::string& name, const std::string& value) : JsonElement(name, JsonElement::Type::JsonString), value(value)
 		{
 		}
 	};
@@ -59,7 +59,7 @@ namespace JsonLite
 	public:
 		int value;
 
-		JsonInteger(std::string name, int value) : JsonElement(name, JsonElement::Type::JsonInt), value(value)
+		JsonInteger(const std::string& name, int value) : JsonElement(name, JsonElement::Type::JsonInt), value(value)
 		{
 		}
 	};
@@ -99,11 +99,11 @@ namespace JsonLite
 		std::string ToString();
 		JsonElement* GetRoot();
 		JsonElement* GetLast();
-		JsonElement* AddArray(JsonElement* parent, std::string name);
-		JsonElement* AddObject(JsonElement* parent, std::string name);
-		JsonElement* AddString(JsonElement* parent, std::string name, std::string value);
-		JsonElement* AddInteger(JsonElement* parent, std::string name, int value);
-		JsonElement* AddFloat(JsonElement* parent, std::string name, float value);
-		JsonElement* AddBoolean(JsonElement* parent, std::string name, bool value);
+		JsonElement* AddArray(JsonElement* parent, const std::string& name);
+		JsonElement* AddObject(JsonElement* parent, const std::string& name);
+		JsonElement* AddString(JsonElement* parent, const std::string& name, const std::string& value);
+		JsonElement* AddInteger(JsonElement* parent, const std::string& name, int value);
+		JsonElement* AddFloat(JsonElement* parent, const std::string& name, float value);
+		JsonElement* AddBoolean(JsonElement* parent, const std::string& name, bool value);
 	};
 }
