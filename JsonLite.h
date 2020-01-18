@@ -19,7 +19,7 @@ namespace JsonLite
 			JsonBool
 		};
 
-		JsonElement(const std::string& name, Type type) : children(), name(name), type(type) 
+		JsonElement(const std::string& name, Type type) : children(), name(name), type(type)
 		{
 		}
 
@@ -91,6 +91,7 @@ namespace JsonLite
 		JsonElement* last;
 		std::string ToString(JsonElement* elem, int depth);
 		std::vector<JsonElement*> objectList;
+		std::string SanitizeInput(const std::string& input);
 
 	public:
 		JsonLiteSerializer();

@@ -1,5 +1,7 @@
 #include <sstream>
 #include <iostream>
+#include <iomanip>
+#include <exception>
 #include "JsonLite.h"
 
 using namespace JsonLite;
@@ -114,10 +116,10 @@ JsonElement* JsonLiteSerializer::AddArray(JsonElement* parent, const std::string
 {
 	if (parent == nullptr)
 	{
-		throw std::exception("Invalid parent JSON element.");
+		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonArray(name);
+	JsonElement* newElem = new JsonArray(this->SanitizeInput(name));
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
@@ -130,10 +132,10 @@ JsonElement* JsonLiteSerializer::AddObject(JsonElement* parent, const std::strin
 {
 	if (parent == nullptr)
 	{
-		throw std::exception("Invalid parent JSON element.");
+		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonObject(name);
+	JsonElement* newElem = new JsonObject(this->SanitizeInput(name));
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
@@ -146,10 +148,10 @@ JsonElement* JsonLiteSerializer::AddString(JsonElement* parent, const std::strin
 {
 	if (parent == nullptr)
 	{
-		throw std::exception("Invalid parent JSON element.");
+		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonString(name, value);
+	JsonElement* newElem = new JsonString(this->SanitizeInput(name), this->SanitizeInput(value));
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
@@ -162,10 +164,10 @@ JsonElement* JsonLiteSerializer::AddInteger(JsonElement* parent, const std::stri
 {
 	if (parent == nullptr)
 	{
-		throw std::exception("Invalid parent JSON element.");
+		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonInteger(name, value);
+	JsonElement* newElem = new JsonInteger(this->SanitizeInput(name), value);
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
@@ -178,10 +180,10 @@ JsonElement* JsonLiteSerializer::AddFloat(JsonElement* parent, const std::string
 {
 	if (parent == nullptr)
 	{
-		throw std::exception("Invalid parent JSON element.");
+		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonFloat(name, value);
+	JsonElement* newElem = new JsonFloat(this->SanitizeInput(name), value);
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
@@ -194,16 +196,31 @@ JsonElement* JsonLiteSerializer::AddBoolean(JsonElement* parent, const std::stri
 {
 	if (parent == nullptr)
 	{
-		throw std::exception("Invalid parent JSON element.");
+		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonBoolean(name, value);
+	JsonElement* newElem = new JsonBoolean(this->SanitizeInput(name), value);
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
 	this->last = newElem;
 
 	return newElem;
+}
+
+std::string JsonLiteSerializer::SanitizeInput(const std::string& input)
+{
+	std::ostringstream o;
+	for (auto c = input.cbegin(); c != input.cend(); c++) {
+		if (*c == '"' || *c == '\\' || ('\x00' <= *c && *c <= '\x1f')) {
+			o << "\\u"
+				<< std::hex << std::setw(4) << std::setfill('0') << (int)* c;
+		}
+		else {
+			o << *c;
+		}
+	}
+	return o.str();
 }
 
 // Example usage
@@ -216,7 +233,7 @@ int main()
 
 	std::vector<int> numbers;
 
-	for (int i = 0 ; i < 1000000; ++i)
+	for (int i = 0 ; i < 1000; ++i)
 	{
 		numbers.push_back(100);
 	}
