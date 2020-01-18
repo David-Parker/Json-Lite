@@ -4,7 +4,6 @@
 using namespace JsonLite;
 
 // Example usage
-#pragma optimize( "", off )
 int main()
 {
 	JsonLiteSerializer serializer;
@@ -32,4 +31,3 @@ int main()
 
 	return 0;
 }
-#pragma optimize( "", on )
