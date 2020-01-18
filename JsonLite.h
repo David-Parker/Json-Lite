@@ -16,72 +16,23 @@ namespace JsonLite
 			JsonString,
 			JsonInt,
 			JsonFloat,
-			JsonBool
+			JsonBool,
+			JsonNull
 		};
-
-		JsonElement(const std::string& name, Type type) : children(), name(name), type(type)
-		{
-		}
 
 		Type type;
 		std::string name;
 		std::vector<JsonElement*> children;
+
+		JsonElement(const std::string& name, Type type) : children(), name(name), type(type) {}
 	};
 
-	class JsonArray : public JsonElement
+	template <typename T>
+	class JsonValue : public JsonElement
 	{
 	public:
-		JsonArray(const std::string& name) : JsonElement(name, JsonElement::Type::JsonArray)
-		{
-		}
-	};
-
-	class JsonObject : public JsonElement
-	{
-	public:
-		JsonObject(const std::string& name) : JsonElement(name, JsonElement::Type::JsonObject)
-		{
-		}
-	};
-
-	class JsonString : public JsonElement
-	{
-	public:
-		std::string value;
-
-		JsonString(const std::string& name, const std::string& value) : JsonElement(name, JsonElement::Type::JsonString), value(value)
-		{
-		}
-	};
-
-	class JsonInteger : public JsonElement
-	{
-	public:
-		int value;
-
-		JsonInteger(const std::string& name, int value) : JsonElement(name, JsonElement::Type::JsonInt), value(value)
-		{
-		}
-	};
-
-	class JsonFloat : public JsonElement
-	{
-	public:
-		float value;
-
-		JsonFloat(std::string name, float value) : JsonElement(name, JsonElement::Type::JsonFloat), value(value)
-		{
-		}
-	};
-
-	class JsonBoolean : public JsonElement
-	{
-	public:
-		bool value;
-
-		JsonBoolean(std::string name, bool value) : JsonElement(name, JsonElement::Type::JsonBool), value(value)
-		{
-		}
+		T value;
+		JsonValue(const std::string& name, const T& value, JsonElement::Type type) : JsonElement(name, type), value(value) {}
 	};
 
 	class JsonLiteSerializer
@@ -89,15 +40,20 @@ namespace JsonLite
 	private:
 		JsonElement* root;
 		JsonElement* last;
-		std::string ToString(JsonElement* elem, int depth);
+		std::string ToString(JsonElement* elem, int depth, bool prettyPrint);
 		std::vector<JsonElement*> objectList;
 		std::string SanitizeInput(const std::string& input);
+
+		JsonElement* AddElement(JsonElement* parent, const std::string& name, JsonElement::Type type);
+
+		template<class T, typename V>
+		JsonElement* AddValue(JsonElement* parent, const std::string& name, const V& value, JsonElement::Type type);
 
 	public:
 		JsonLiteSerializer();
 		~JsonLiteSerializer();
 
-		std::string ToString();
+		std::string ToString(bool prettyPrint = false);
 		JsonElement* GetRoot();
 		JsonElement* GetLast();
 		JsonElement* AddArray(JsonElement* parent, const std::string& name);
@@ -106,5 +62,6 @@ namespace JsonLite
 		JsonElement* AddInteger(JsonElement* parent, const std::string& name, int value);
 		JsonElement* AddFloat(JsonElement* parent, const std::string& name, float value);
 		JsonElement* AddBoolean(JsonElement* parent, const std::string& name, bool value);
+		JsonElement* AddNull(JsonElement* parent, const std::string& name);
 	};
 }
