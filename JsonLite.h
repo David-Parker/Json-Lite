@@ -1,4 +1,6 @@
 #pragma once
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -40,12 +42,13 @@ namespace JsonLite
 	private:
 		JsonElement* root;
 		JsonElement* last;
-		std::string ToString(JsonElement* elem, int depth, bool prettyPrint);
+		std::ostringstream buffer;
 		std::vector<JsonElement*> objectList;
-		std::string SanitizeInput(const std::string& input);
 
+		void ToString(JsonElement* elem, int depth, bool prettyPrint);
+		void AddTabs(int depth);
+		void SanitizeInput(const std::string& input);
 		JsonElement* AddElement(JsonElement* parent, const std::string& name, JsonElement::Type type);
-
 		template<class T, typename V>
 		JsonElement* AddValue(JsonElement* parent, const std::string& name, const V& value, JsonElement::Type type);
 
@@ -55,13 +58,12 @@ namespace JsonLite
 
 		std::string ToString(bool prettyPrint = false);
 		JsonElement* GetRoot();
-		JsonElement* GetLast();
 		JsonElement* AddArray(JsonElement* parent, const std::string& name);
 		JsonElement* AddObject(JsonElement* parent, const std::string& name);
-		JsonElement* AddString(JsonElement* parent, const std::string& name, const std::string& value);
-		JsonElement* AddInteger(JsonElement* parent, const std::string& name, int value);
-		JsonElement* AddFloat(JsonElement* parent, const std::string& name, float value);
-		JsonElement* AddBoolean(JsonElement* parent, const std::string& name, bool value);
-		JsonElement* AddNull(JsonElement* parent, const std::string& name);
+		void AddString(JsonElement* parent, const std::string& name, const std::string& value);
+		void AddInteger(JsonElement* parent, const std::string& name, int value);
+		void AddFloat(JsonElement* parent, const std::string& name, float value);
+		void AddBoolean(JsonElement* parent, const std::string& name, bool value);
+		void AddNull(JsonElement* parent, const std::string& name);
 	};
 }

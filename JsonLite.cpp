@@ -1,12 +1,10 @@
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include <exception>
+#include <iomanip>
 #include "JsonLite.h"
 
 using namespace JsonLite;
 
-JsonLiteSerializer::JsonLiteSerializer() : objectList()
+JsonLiteSerializer::JsonLiteSerializer() : objectList(), buffer()
 {
 	this->root = new JsonElement("", JsonElement::Type::JsonObject);
 	this->last = root;
@@ -23,102 +21,100 @@ JsonLiteSerializer::~JsonLiteSerializer()
 
 std::string JsonLiteSerializer::ToString(bool prettyPrint)
 {
-	return ToString(root, 0, prettyPrint);
+	ToString(root, 0, prettyPrint);
+
+	std::string ret = this->buffer.str();
+	this->buffer.str("");
+	this->buffer.clear();
+
+	return ret;
 }
 
-void AddTabs(std::stringstream& stream, int depth)
+void JsonLiteSerializer::AddTabs(int depth)
 {
 	for (int i = 0; i < depth; ++i)
 	{
-		stream << "  ";
+		this->buffer << "  ";
 	}
 }
 
-std::string JsonLiteSerializer::ToString(JsonElement* elem, int depth, bool prettyPrint)
+void JsonLiteSerializer::ToString(JsonElement* elem, int depth, bool prettyPrint)
 {
-	std::stringstream ret;
-	JsonElement* pElem = elem;
-	char openChar = 0;
-	char closeChar = 0;
-
 	// Tabs
 	if (prettyPrint)
-		AddTabs(ret, depth);
+		AddTabs(depth);
 
 	// Add element name
 	if (elem->name != "")
 	{
-		ret << "\"" << elem->name << "\": ";
+		this->buffer << "\"";
+		SanitizeInput(elem->name);
+		this->buffer << "\": ";
 	}
 
 	// Add open grouping chars if neccessary
-	switch (pElem->type)
+	switch (elem->type)
 	{
 	case JsonElement::Type::JsonArray:
-		ret << '[';
-		if (prettyPrint) ret << std::endl;
+		this->buffer << '[';
+		if (prettyPrint) this->buffer << std::endl;
 		break;
 	case JsonElement::Type::JsonObject:
-		ret << '{';
-		if (prettyPrint) ret << std::endl;
+		this->buffer << '{';
+		if (prettyPrint) this->buffer << std::endl;
 		break;
 	case JsonElement::Type::JsonString:
-		ret << "\"" << ((JsonValue<std::string>*)pElem)->value << "\"";
+		this->buffer << "\"";
+		SanitizeInput(((JsonValue<std::string>*)elem)->value);
+		this->buffer << "\"";
 		break;
 	case JsonElement::Type::JsonInt:
-		ret << ((JsonValue<int>*)pElem)->value;
+		this->buffer << ((JsonValue<int>*)elem)->value;
 		break;
 	case JsonElement::Type::JsonFloat:
-		ret << ((JsonValue<float>*)pElem)->value;
+		this->buffer << ((JsonValue<float>*)elem)->value;
 		break;
 	case JsonElement::Type::JsonBool:
-		ret << ((JsonValue<bool>*)pElem)->value;
+		this->buffer << ((JsonValue<bool>*)elem)->value;
 		break;
 	case JsonElement::Type::JsonNull:
-		ret << "null";
+		this->buffer << "null";
 		break;
 	default:
 		throw std::runtime_error("Type not implemented.");
 	}
 
 	// recurse on all nested elements
-	for (JsonElement* elem : pElem->children)
+	for (JsonElement* child : elem->children)
 	{
-		ret << ToString(elem, depth + 1, prettyPrint);
+		ToString(child, depth + 1, prettyPrint);
 
-		if (elem != pElem->children.back())
+		if (child != elem->children.back())
 		{
-			ret << ",";
+			this->buffer << ",";
 		}
 
 		if (prettyPrint)
-			ret << std::endl;
+			this->buffer << std::endl;
 	}
 
 	// Add closing grouping chars if neccessary
-	switch (pElem->type)
+	switch (elem->type)
 	{
 	case JsonElement::Type::JsonArray:
-		if (prettyPrint) AddTabs(ret, depth);
-		ret << ']';
+		if (prettyPrint) AddTabs(depth);
+		this->buffer << ']';
 		break;
 	case JsonElement::Type::JsonObject:
-		if (prettyPrint) AddTabs(ret, depth);
-		ret << '}';
+		if (prettyPrint) AddTabs(depth);
+		this->buffer << '}';
 		break;
 	}
-
-	return ret.str();
 }
 
 JsonElement* JsonLiteSerializer::GetRoot()
 {
 	return this->root;
-}
-
-JsonElement* JsonLiteSerializer::GetLast()
-{
-	return this->last;
 }
 
 JsonElement* JsonLiteSerializer::AddElement(JsonElement * parent, const std::string & name, JsonElement::Type type)
@@ -128,11 +124,10 @@ JsonElement* JsonLiteSerializer::AddElement(JsonElement * parent, const std::str
 		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonElement(this->SanitizeInput(name), type);
+	JsonElement* newElem = new JsonElement(name, type);
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
-	this->last = newElem;
 
 	return newElem;
 }
@@ -145,11 +140,29 @@ JsonElement* JsonLiteSerializer::AddValue(JsonElement * parent, const std::strin
 		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonValue<T>(this->SanitizeInput(name), value, type);
+	if (parent->type == JsonElement::Type::JsonObject)
+	{
+		if (name == "")
+		{
+			throw std::runtime_error("String value must contain a name.");
+		}
+	}
+	else if (parent->type == JsonElement::Type::JsonArray)
+	{
+		if (name != "")
+		{
+			throw std::runtime_error("String value must not contain a name.");
+		}
+	}
+	else
+	{
+		throw std::runtime_error("Cannot add a string value to this element.");
+	}
+
+	JsonElement* newElem = new JsonValue<T>(name, value, type);
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
-	this->last = newElem;
 
 	return newElem;
 }
@@ -164,46 +177,45 @@ JsonElement* JsonLiteSerializer::AddObject(JsonElement* parent, const std::strin
 	return this->AddElement(parent, name, JsonElement::Type::JsonObject);
 }
 
-JsonElement* JsonLiteSerializer::AddNull(JsonElement* parent, const std::string& name)
+void JsonLiteSerializer::AddNull(JsonElement* parent, const std::string& name)
 {
-	return this->AddElement(parent, name, JsonElement::Type::JsonNull);
+	this->AddElement(parent, name, JsonElement::Type::JsonNull);
 }
 
-JsonElement* JsonLiteSerializer::AddString(JsonElement* parent, const std::string& name, const std::string& value)
+void JsonLiteSerializer::AddString(JsonElement* parent, const std::string& name, const std::string& value)
 {
-	return this->AddValue<std::string>(parent, name, this->SanitizeInput(value), JsonElement::Type::JsonString);
+	this->AddValue<std::string>(parent, name, value, JsonElement::Type::JsonString);
 }
 
-JsonElement* JsonLiteSerializer::AddInteger(JsonElement* parent, const std::string& name, int value)
+void JsonLiteSerializer::AddInteger(JsonElement* parent, const std::string& name, int value)
 {
-	return this->AddValue<int>(parent, name, value, JsonElement::Type::JsonInt);
+	this->AddValue<int>(parent, name, value, JsonElement::Type::JsonInt);
 }
 
-JsonElement* JsonLiteSerializer::AddFloat(JsonElement* parent, const std::string& name, float value)
+void JsonLiteSerializer::AddFloat(JsonElement* parent, const std::string& name, float value)
 {
-	return this->AddValue<float>(parent, name, value, JsonElement::Type::JsonFloat);
+	this->AddValue<float>(parent, name, value, JsonElement::Type::JsonFloat);
 }
 
-JsonElement* JsonLiteSerializer::AddBoolean(JsonElement* parent, const std::string& name, bool value)
+void JsonLiteSerializer::AddBoolean(JsonElement* parent, const std::string& name, bool value)
 {
-	return this->AddValue<bool>(parent, name, value, JsonElement::Type::JsonBool);
+	this->AddValue<bool>(parent, name, value, JsonElement::Type::JsonBool);
 }
 
 // Escape all json control characters
-std::string JsonLiteSerializer::SanitizeInput(const std::string& input)
+void JsonLiteSerializer::SanitizeInput(const std::string& input)
 {
-	std::ostringstream output;
-
 	for (auto c = input.cbegin(); c != input.cend(); ++c)
 	{
+		char ch = *c;
+
 		// Encode special control characters in hex
-		if (*c == '"' || *c == '\\' || ('\x00' <= *c && *c <= '\x1f'))
+		if (ch == '"' || ch == '\\' || ('\x00' <= ch && ch <= '\x1f'))
 		{
-			output << "\\u" << std::hex << std::setw(4) << std::setfill('0') << (int)* c;
+			this->buffer << "\\u" << std::hex << std::setw(4) << std::setfill('0') << (int)ch;
 		}
 		else {
-			output << *c;
+			this->buffer << ch;
 		}
 	}
-	return output.str();
 }
