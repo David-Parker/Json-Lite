@@ -41,7 +41,6 @@ namespace JsonLite
 	{
 	private:
 		JsonElement* root;
-		JsonElement* last;
 		std::ostringstream buffer;
 		std::vector<JsonElement*> objectList;
 

@@ -7,7 +7,6 @@ using namespace JsonLite;
 JsonLiteSerializer::JsonLiteSerializer() : objectList(), buffer()
 {
 	this->root = new JsonElement("", JsonElement::Type::JsonObject);
-	this->last = root;
 	objectList.push_back(this->root);
 }
 
