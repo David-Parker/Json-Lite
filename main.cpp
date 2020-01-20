@@ -25,6 +25,7 @@ int main()
 	serializer.AddNull(parent, "null");
 
 	std::string result = serializer.ToString(true);
+	result = serializer.ToString(true);
 
 	std::cout << result << std::endl;
 

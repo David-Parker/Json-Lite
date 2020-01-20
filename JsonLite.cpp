@@ -10,7 +10,7 @@ static const char hexMap[] = "0123456789abcdef";
 #pragma region PrivateMethods
 JsonLiteSerializer::JsonLiteSerializer() : objectList(), buffer()
 {
-	this->root = new JsonElement("", JsonElement::Type::JsonObject);
+	this->root = new JsonElement("", JsonElement::Type::JsonObject, nullptr);
 	objectList.push_back(this->root);
 }
 
@@ -37,7 +37,7 @@ JsonElement* JsonLiteSerializer::AddElement(JsonElement * parent, const std::str
 		throw std::runtime_error("Invalid parent JSON element.");
 	}
 
-	JsonElement* newElem = new JsonElement(name, type);
+	JsonElement* newElem = new JsonElement(name, type, parent);
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
@@ -72,7 +72,7 @@ JsonElement* JsonLiteSerializer::AddValue(JsonElement * parent, const std::strin
 		throw std::runtime_error("Cannot add a string value to this element.");
 	}
 
-	JsonElement* newElem = new JsonValue<T>(name, value, type);
+	JsonElement* newElem = new JsonValue<T>(name, value, type, parent);
 
 	parent->children.push_back(newElem);
 	this->objectList.push_back(newElem);
@@ -150,6 +150,24 @@ void JsonLiteSerializer::AddString(JsonElement* parent, const std::string& name,
 	this->AddValue<std::string>(parent, name, value, JsonElement::Type::JsonString);
 }
 
+void JsonLiteSerializer::Clear()
+{
+	for (JsonElement* elem : objectList)
+	{
+		delete elem;
+	}
+
+	objectList.clear();
+
+	this->root = new JsonElement("", JsonElement::Type::JsonObject, nullptr);
+	objectList.push_back(this->root);
+}
+
+JsonElement* JsonLiteSerializer::GetParent(JsonElement* elem)
+{
+	return elem->parent;
+}
+
 JsonElement* JsonLiteSerializer::GetRoot()
 {
 	return this->root;
@@ -157,11 +175,10 @@ JsonElement* JsonLiteSerializer::GetRoot()
 
 void JsonLiteSerializer::ToString(JsonElement* elem, int depth, bool prettyPrint)
 {
-	// Tabs
 	if (prettyPrint)
 		AddTabs(depth);
 
-	// Add element name
+	// Add element name, if it exists
 	if (elem->name != "")
 	{
 		this->buffer += "\"";
@@ -169,7 +186,6 @@ void JsonLiteSerializer::ToString(JsonElement* elem, int depth, bool prettyPrint
 		this->buffer += "\": ";
 	}
 
-	// Add open grouping chars if neccessary
 	switch (elem->type)
 	{
 	case JsonElement::Type::JsonArray:
@@ -192,7 +208,7 @@ void JsonLiteSerializer::ToString(JsonElement* elem, int depth, bool prettyPrint
 		this->buffer += std::to_string(((JsonValue<float>*)elem)->value);
 		break;
 	case JsonElement::Type::JsonBool:
-		this->buffer += std::to_string(((JsonValue<bool>*)elem)->value);
+		this->buffer += ((JsonValue<bool>*)elem)->value == true ? "true" : "false";
 		break;
 	case JsonElement::Type::JsonNull:
 		this->buffer += "null";
@@ -201,7 +217,7 @@ void JsonLiteSerializer::ToString(JsonElement* elem, int depth, bool prettyPrint
 		throw std::runtime_error("Type not implemented.");
 	}
 
-	// recurse on all nested elements
+	// Recurse on all nested elements
 	for (JsonElement* child : elem->children)
 	{
 		ToString(child, depth + 1, prettyPrint);

@@ -1,6 +1,6 @@
-/x64
-/x86
-/bin
-/Debug
-/Release
+**/x64
+**/x86
+**/bin
+**/Debug
+**/Release
 *.vcxproj*

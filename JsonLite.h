@@ -8,6 +8,13 @@ namespace JsonLite
 	// Quick C++ 'reflection' base class, determine class type at runtime for pointer down casting.
 	class JsonElement
 	{
+	friend class JsonLiteSerializer;
+
+	private:
+		std::vector<JsonElement*> children;
+		std::string name;
+		JsonElement* parent;
+
 	public:
 		enum Type
 		{
@@ -21,10 +28,7 @@ namespace JsonLite
 		};
 
 		Type type;
-		std::string name;
-		std::vector<JsonElement*> children;
-
-		JsonElement(const std::string& name, Type type) : children(), name(name), type(type) {}
+		JsonElement(const std::string& name, Type type, JsonElement* parent) : children(), name(name), type(type), parent(parent) {}
 	};
 
 	template <typename T>
@@ -32,7 +36,7 @@ namespace JsonLite
 	{
 	public:
 		T value;
-		JsonValue(const std::string& name, const T& value, JsonElement::Type type) : JsonElement(name, type), value(value) {}
+		JsonValue(const std::string& name, const T& value, JsonElement::Type type, JsonElement* parent) : JsonElement(name, type, parent), value(value) {}
 	};
 
 	class JsonLiteSerializer
@@ -60,6 +64,8 @@ namespace JsonLite
 		void AddInteger(JsonElement* parent, const std::string& name, int value);
 		void AddNull(JsonElement* parent, const std::string& name);
 		void AddString(JsonElement* parent, const std::string& name, const std::string& value);
+		void Clear();
+		JsonElement* GetParent(JsonElement* elem);
 		JsonElement* GetRoot();
 		std::string ToString(bool prettyPrint = false);
 	};
